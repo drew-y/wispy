@@ -1,0 +1,26 @@
+{
+  "name": "wispy",
+  "version": "1.0.0",
+  "description": "Educational WASM Language",
+  "main": "dist/index.js",
+  "bin": {
+    "wispy": "dist/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "keywords": [
+    "wasm",
+    "webassembly",
+    "compilers",
+    "lisp"
+  ],
+  "author": "Drew Youngwerth",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^17.0.40",
+    "prettier": "^2.6.2",
+    "typescript": "^4.7.3"
+  }
+}
