@@ -1,6 +1,4 @@
-export const keywords = ["if", "fn"] as const;
-
-export type Keyword = typeof keywords[number];
+import { Keyword } from "./keywords";
 
 export type Token =
   | { type: "parenthesis"; value: "(" | ")" }
