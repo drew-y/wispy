@@ -35,16 +35,15 @@ const extractTokenString = (chars: string[]): string | undefined => {
       continue;
     }
 
-    // Single character tokens act as a whitespace. If we've already started reading a token,
-    // terminate the current token and return it. Otherwise, continue reading the token.
-    if (isSingleCharToken(char) && token.length) break;
+    // Terminator tokens signify the end of the current token (if any).
+    if (isTerminatorToken(char) && token.length) break;
 
     // Add the character to the token and discard it from the input
     token.push(char);
     chars.shift();
 
     // If the only token we've received so far is a single character token, that's our whole token.
-    if (isSingleCharToken(char)) break;
+    if (isTerminatorToken(char)) break;
   }
 
   return token.length ? token.join("") : undefined;
@@ -78,7 +77,7 @@ const isParenthesis = (token: string): token is "(" | ")" => token === "(" || to
 
 const isSquareBracket = (token: string): token is "[" | "]" => token === "[" || token === "]";
 
-const isSingleCharToken = (token: string): token is "(" | ")" | "[" | "]" => {
+const isTerminatorToken = (token: string): token is "(" | ")" | "[" | "]" => {
   return isParenthesis(token) || isSquareBracket(token);
 };
 
