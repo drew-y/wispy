@@ -8,4 +8,6 @@ export type Token =
   | { type: "identifier"; value: string }
   /** Typed identifiers take the from identifier:type */
   | { type: "typed-identifier"; value: string }
-  | { type: "keyword"; value: Keyword };
+  | { type: "keyword"; value: Keyword }
+  | { type: "spaces"; count: number }
+  | { type: "new-line" };
