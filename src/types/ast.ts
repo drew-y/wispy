@@ -1,44 +1,33 @@
-export type AstNode = IntNode | FloatNode | ListNode | IdentifierNode | TypedIdentifierNode;
+import { Token } from "./token";
 
-export type FnNode = {
-  type: "fn";
-  identifier: string;
-  returnTypeIdentifier: string;
-  args: TypedIdentifierNode[];
-  body: AstNode[];
+export type AstNode = IntNode | FloatNode | IdentifierNode | TypedIdentifierNode | BlockNode;
+
+export type BlockNode = {
+  type: "block";
+  expressions: AstNode[];
 };
 
-export interface CallNode extends AstNodeBase {
-  type: "call";
-  elements: AstNode[];
-}
-
-export interface IntNode extends AstNodeBase {
+export type IntNode = {
   type: "int";
   value: number;
-}
+};
 
-export interface FloatNode extends AstNodeBase {
+export type FloatNode = {
   type: "float";
   value: number;
-}
+};
 
-export interface ListNode extends AstNodeBase {
-  type: "list";
-  value: AstNode[];
-}
-
-export interface IdentifierNode extends AstNodeBase {
+export type IdentifierNode = {
   type: "identifier";
-  value: string;
-}
+  identifier: string;
+};
 
-export interface TypedIdentifierNode extends AstNodeBase {
+export type TypedIdentifierNode = {
   type: "typed-identifier";
   identifier: string;
   typeIdentifier: string;
-}
+};
 
-export interface AstNodeBase {
-  type: string;
-}
+export type NonArrayToken = Exclude<Token, "parenthesis" | "square-bracket">;
+export type TokenTreeItem = NonArrayToken | TokenTree;
+export type TokenTree = TokenTreeItem[];
