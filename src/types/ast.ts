@@ -1,38 +1,44 @@
+export type AstNode = IntNode | FloatNode | ListNode | IdentifierNode | TypedIdentifierNode;
+
 export type FnNode = {
   type: "fn";
-  name: string;
+  identifier: string;
+  returnTypeIdentifier: string;
   args: TypedIdentifierNode[];
-  body: Node[];
+  body: AstNode[];
 };
 
-type CallNode = {
+export interface CallNode extends AstNodeBase {
   type: "call";
-  fn: string;
-  args: Node[];
-};
+  elements: AstNode[];
+}
 
-type IntNode = {
+export interface IntNode extends AstNodeBase {
   type: "int";
   value: number;
-};
+}
 
-type FloatNode = {
+export interface FloatNode extends AstNodeBase {
   type: "float";
   value: number;
-};
+}
 
-type ListNode = {
+export interface ListNode extends AstNodeBase {
   type: "list";
-  value: Node[];
-};
+  value: AstNode[];
+}
 
-type IdentifierNode = {
+export interface IdentifierNode extends AstNodeBase {
   type: "identifier";
   value: string;
-};
+}
 
-type TypedIdentifierNode = {
+export interface TypedIdentifierNode extends AstNodeBase {
   type: "typed-identifier";
-  value: string;
-  identifierType: string;
-};
+  identifier: string;
+  typeIdentifier: string;
+}
+
+export interface AstNodeBase {
+  type: string;
+}
