@@ -2,7 +2,7 @@
   "name": "wispy",
   "version": "1.0.0",
   "description": "Educational WASM Language",
-  "main": "dist/index.js",
+  "main": "dist/index.mjs",
   "type": "module",
   "bin": {
     "wispy": "dist/index.mjs"

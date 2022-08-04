@@ -15,4 +15,15 @@ const binary = mod.emitBinary();
 const compiled = new WebAssembly.Module(binary);
 const instance = new WebAssembly.Instance(compiled, {});
 
-console.log((instance.exports as any).fib(10));
+function fib(val: number): number {
+  if (val < 2) return val;
+  return fib(val - 1) + fib(val - 2);
+}
+
+console.time("wasm");
+(instance.exports as any).fib(42);
+console.timeEnd("wasm");
+
+console.time("javascript");
+fib(42);
+console.timeEnd("javascript");

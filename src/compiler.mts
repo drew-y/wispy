@@ -1,5 +1,5 @@
 import binaryen from "binaryen";
-import { AstNode, BlockNode } from "./types/index.mjs";
+import { AstNode, BlockNode, IdentifierNode } from "./types/index.mjs";
 
 export const compile = (block: BlockNode): binaryen.Module => {
   const mod = new binaryen.Module();
@@ -10,7 +10,7 @@ export const compile = (block: BlockNode): binaryen.Module => {
     expression: block,
     mod,
     functionMap,
-    parameters: [],
+    parameters: new Map(),
   });
 
   return mod;
@@ -19,15 +19,16 @@ export const compile = (block: BlockNode): binaryen.Module => {
 interface CompileExpressionOpts {
   expression: AstNode;
   mod: binaryen.Module;
-  parameters: string[];
+  parameters: ParameterMap;
   functionMap: FunctionMap;
 }
 
 const compileExpression = (opts: CompileExpressionOpts): number => {
   const { expression, mod } = opts;
-  if (expression.type === "block") return compileBlock({ ...opts, expression });
-  if (expression.type === "int") return mod.i32.const(expression.value);
-  if (expression.type === "float") return mod.f32.const(expression.value);
+  if (isNodeType(expression, "block")) return compileBlock({ ...opts, expression });
+  if (isNodeType(expression, "int")) return mod.i32.const(expression.value);
+  if (isNodeType(expression, "float")) return mod.f32.const(expression.value);
+  if (isNodeType(expression, "identifier")) return compileIdentifier({ ...opts, expression });
   throw new Error(`Unrecognized expression ${expression.type}`);
 };
 
@@ -92,6 +93,22 @@ const compileFunction = (opts: CompileBlockOpts) => {
   return mod.nop();
 };
 
+interface CompileIdentifierOpts extends CompileExpressionOpts {
+  expression: IdentifierNode;
+}
+
+const compileIdentifier = (opts: CompileIdentifierOpts) => {
+  const { expression: node, parameters, mod } = opts;
+  const info = parameters.get(node.identifier);
+  if (!info) {
+    throw new Error(`Unrecognized identifier ${node.identifier}`);
+  }
+
+  return mod.local.get(info.index, info.type);
+};
+
+type ParameterMap = Map<string, { index: number; type: number }>;
+
 const getFunctionParameters = (block: BlockNode) => {
   const node = block.expressions[2];
 
@@ -99,20 +116,23 @@ const getFunctionParameters = (block: BlockNode) => {
     throw new Error("Expected function parameters");
   }
 
-  if (!node.expressions.every((n) => isNodeType(n, "typed-identifier"))) {
-    throw new Error("All parameters must be typed");
-  }
+  const { parameters, types } = node.expressions.reduce(
+    (prev, node, index) => {
+      if (!isNodeType(node, "typed-identifier")) {
+        throw new Error("All parameters must be typed");
+      }
+      const type = mapBinaryenType(node.typeIdentifier);
 
-  const { parameters, types } = block.expressions.reduce((prev, node) => {
-    if (!isNodeType(node, "typed-identifier")) {
-      throw new Error("All parameters must be typed");
+      return {
+        parameters: new Map([[node.identifier, { index, type }], ...prev.parameters]),
+        types: [type, ...prev.types],
+      };
+    },
+    { parameters: new Map(), types: [] } as {
+      parameters: ParameterMap;
+      types: number[];
     }
-
-    return {
-      parameters: [node.identifier, ...prev.parameters],
-      types: [mapBinaryenType(node.typeIdentifier), ...prev.types],
-    };
-  }, {} as { parameters: string[]; types: number[] });
+  );
 
   return {
     parameters,
@@ -141,7 +161,7 @@ const compileIf = (opts: CompileBlockOpts) => {
   const ifFalseNode = expression.expressions[3];
   const condition = compileExpression({ ...opts, expression: conditionNode });
   const ifTrue = compileExpression({ ...opts, expression: ifTrueNode });
-  const ifFalse = ifFalseNode ? compileExpression({ ...opts, expression: ifTrueNode }) : undefined;
+  const ifFalse = ifFalseNode ? compileExpression({ ...opts, expression: ifFalseNode }) : undefined;
   return mod.if(condition, ifTrue, ifFalse);
 };
 
@@ -216,7 +236,7 @@ const registerBinaryFunction = (opts: {
     [],
     mod.block(
       null,
-      [operator(mod.local.get(0, paramType), mod.local.get(0, paramType))],
+      [operator(mod.local.get(0, paramType), mod.local.get(1, paramType))],
       binaryen.auto
     )
   );
@@ -249,7 +269,7 @@ const generateFunctionMap = (block: BlockNode): FunctionMap => {
 };
 
 const mapBinaryenType = (typeIdentifier: string): binaryen.Type => {
-  if (typeIdentifier === "int32") return binaryen.i32;
+  if (typeIdentifier === "i32") return binaryen.i32;
   if (typeIdentifier === "f32") return binaryen.f32;
   throw new Error(`Unsupported type ${typeIdentifier}`);
 };
@@ -268,5 +288,5 @@ export const isNodeType = <T extends AstNode["type"]>(
   item: unknown,
   type: T
 ): item is Extract<AstNode, { type: T }> => {
-  return item instanceof Object && "type" in item && item[type] === type;
+  return !!item && typeof item === "object" && (item as Record<string, unknown>)["type"] === type;
 };
