@@ -1,5 +1,5 @@
 import binaryen from "binaryen";
-import { AstNode, BlockNode } from "./types";
+import { AstNode, BlockNode } from "./types/index.mjs";
 
 export const compile = (block: BlockNode): binaryen.Module => {
   const mod = new binaryen.Module();

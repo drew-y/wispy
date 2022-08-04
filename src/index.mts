@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { readFileSync } from "fs";
-import { compile } from "./compiler";
-import { lex } from "./lexer";
-import { parse } from "./parser";
+import { compile } from "./compiler.mjs";
+import { lex } from "./lexer.mjs";
+import { parse } from "./parser.mjs";
 
 const file = process.argv[2];
 const input = readFileSync(file, "utf8");

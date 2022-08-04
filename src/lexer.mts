@@ -1,4 +1,4 @@
-import { Bracket, Token } from "./types";
+import { Bracket, Token } from "./types/index.mjs";
 
 export const lex = (input: string): Token[] => {
   const chars = input.trim().split("");

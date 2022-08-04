@@ -1,4 +1,4 @@
-import { Token } from "./token";
+import { Token } from "./token.mjs";
 
 export type AstNode = IntNode | FloatNode | IdentifierNode | TypedIdentifierNode | BlockNode;
 

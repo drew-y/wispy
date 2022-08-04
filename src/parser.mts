@@ -13,7 +13,7 @@ import {
   IntNode,
   AstNode,
   BlockNode,
-} from "./types";
+} from "./types/index.mjs";
 
 export const parse = (tokens: Token[]): BlockNode => {
   const blocks: BlockNode[] = [];
