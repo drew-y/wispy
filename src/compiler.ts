@@ -3,11 +3,13 @@ import { AstNode, BlockNode } from "./types";
 
 export const compile = (block: BlockNode): binaryen.Module => {
   const module = new binaryen.Module();
+  const functionMap = generateFunctionMap(block);
 
+  registerStandardFunctions(module, functionMap);
   compileExpression({
     expression: block,
     module,
-    functionMap: generateFunctionMap(block),
+    functionMap,
     parameters: [],
   });
 
@@ -145,39 +147,80 @@ const compileIf = (opts: CompileBlockOpts) => {
 
 const registerStandardFunctions = (module: binaryen.Module, map: FunctionMap) => {
   const { i32, f32 } = binaryen;
-  registerLogicFunction({ name: "lt_i32", type: i32, operator: module.i32.lt_s, module, map });
-  registerLogicFunction({ name: "gt_i32", type: i32, operator: module.i32.gt_s, module, map });
-  registerLogicFunction({ name: "eq_i32", type: i32, operator: module.i32.eq, module, map });
-  registerLogicFunction({ name: "lt_f32", type: f32, operator: module.f32.lt, module, map });
-  registerLogicFunction({ name: "gt_f32", type: f32, operator: module.f32.gt, module, map });
-  registerLogicFunction({ name: "eq_f32", type: f32, operator: module.f32.eq, module, map });
+  const { i32: i32m, f32: f32m } = module;
+  const common = { module, map };
+  registerLogicFunction({ name: "lt_i32", type: i32, operator: i32m.lt_s, ...common });
+  registerLogicFunction({ name: "gt_i32", type: i32, operator: i32m.gt_s, ...common });
+  registerLogicFunction({ name: "eq_i32", type: i32, operator: i32m.eq, ...common });
+  registerLogicFunction({ name: "lt_f32", type: f32, operator: f32m.lt, ...common });
+  registerLogicFunction({ name: "gt_f32", type: f32, operator: f32m.gt, ...common });
+  registerLogicFunction({ name: "eq_f32", type: f32, operator: f32m.eq, ...common });
+  registerMathFunction({ name: "add_i32", type: i32, operator: i32m.add, ...common });
+  registerMathFunction({ name: "sub_i32", type: i32, operator: i32m.sub, ...common });
+  registerMathFunction({ name: "mul_i32", type: i32, operator: i32m.mul, ...common });
+  registerMathFunction({ name: "add_f32", type: f32, operator: f32m.add, ...common });
+  registerMathFunction({ name: "sub_f32", type: f32, operator: f32m.sub, ...common });
+  registerMathFunction({ name: "mul_f32", type: f32, operator: f32m.mul, ...common });
+  registerMathFunction({ name: "div_f32", type: f32, operator: f32m.div, ...common });
 };
 
-const registerLogicFunction = ({
-  module,
-  name,
-  type,
-  operator,
-  map,
-}: {
+const registerMathFunction = (opts: {
   module: binaryen.Module;
   name: string;
   type: number;
   operator: (left: number, right: number) => number;
   map: FunctionMap;
 }) => {
+  const { module, name, type, operator, map } = opts;
+  return registerBinaryFunction({
+    module,
+    name,
+    paramType: type,
+    returnType: type,
+    operator,
+    map,
+  });
+};
+
+const registerLogicFunction = (opts: {
+  module: binaryen.Module;
+  name: string;
+  type: number;
+  operator: (left: number, right: number) => number;
+  map: FunctionMap;
+}) => {
+  const { module, name, type, operator, map } = opts;
+  return registerBinaryFunction({
+    module,
+    name,
+    paramType: type,
+    returnType: binaryen.i32,
+    operator,
+    map,
+  });
+};
+
+const registerBinaryFunction = (opts: {
+  module: binaryen.Module;
+  name: string;
+  paramType: number;
+  returnType: number;
+  operator: (left: number, right: number) => number;
+  map: FunctionMap;
+}) => {
+  const { module, name, paramType, returnType, operator, map } = opts;
   module.addFunction(
     name,
-    binaryen.createType([type, type]),
-    binaryen.i32,
+    binaryen.createType([paramType, paramType]),
+    returnType,
     [],
     module.block(
       null,
-      [operator(module.local.get(0, type), module.local.get(0, type))],
+      [operator(module.local.get(0, paramType), module.local.get(0, paramType))],
       binaryen.auto
     )
   );
-  map.set(name, { returnType: binaryen.i32 });
+  map.set(name, { returnType });
 };
 
 /** Function name, Function info */
