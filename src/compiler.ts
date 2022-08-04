@@ -2,32 +2,32 @@ import binaryen from "binaryen";
 import { AstNode, BlockNode } from "./types";
 
 export const compile = (block: BlockNode): binaryen.Module => {
-  const module = new binaryen.Module();
+  const mod = new binaryen.Module();
   const functionMap = generateFunctionMap(block);
 
-  registerStandardFunctions(module, functionMap);
+  registerStandardFunctions(mod, functionMap);
   compileExpression({
     expression: block,
-    module,
+    mod,
     functionMap,
     parameters: [],
   });
 
-  return module;
+  return mod;
 };
 
 interface CompileExpressionOpts {
   expression: AstNode;
-  module: binaryen.Module;
+  mod: binaryen.Module;
   parameters: string[];
   functionMap: FunctionMap;
 }
 
 const compileExpression = (opts: CompileExpressionOpts): number => {
-  const { expression, module } = opts;
+  const { expression, mod } = opts;
   if (expression.type === "block") return compileBlock({ ...opts, expression });
-  if (expression.type === "int") return module.i32.const(expression.value);
-  if (expression.type === "float") return module.f32.const(expression.value);
+  if (expression.type === "int") return mod.i32.const(expression.value);
+  if (expression.type === "float") return mod.f32.const(expression.value);
   throw new Error(`Unrecognized expression ${expression.type}`);
 };
 
@@ -36,7 +36,7 @@ interface CompileBlockOpts extends CompileExpressionOpts {
 }
 
 const compileBlock = (opts: CompileBlockOpts): number => {
-  const { expression: block, module } = opts;
+  const { expression: block, mod } = opts;
 
   // Determine if this block is actually a function call
   if (isNodeType(block.expressions[0], "identifier") && block.expressions.length > 1) {
@@ -47,11 +47,11 @@ const compileBlock = (opts: CompileBlockOpts): number => {
     return compileExpression({ ...opts, expression });
   });
 
-  return module.block(null, expressions, binaryen.auto);
+  return mod.block(null, expressions, binaryen.auto);
 };
 
 const compileFunctionCall = (opts: CompileBlockOpts) => {
-  const { expression, functionMap, module } = opts;
+  const { expression, functionMap, mod } = opts;
   const identifierNode = expression.expressions[0];
 
   if (!isNodeType(identifierNode, "identifier")) {
@@ -71,11 +71,11 @@ const compileFunctionCall = (opts: CompileBlockOpts) => {
     .slice(1)
     .map((expression) => compileExpression({ ...opts, expression }));
 
-  return module.call(identifier, args, functionInfo.returnType);
+  return mod.call(identifier, args, functionInfo.returnType);
 };
 
 const compileFunction = (opts: CompileBlockOpts) => {
-  const { expression: block, module } = opts;
+  const { expression: block, mod } = opts;
   assertFn(block);
   const { identifier, returnType } = getFunctionIdentifier(block);
   const { parameters, parameterTypes } = getFunctionParameters(block);
@@ -87,9 +87,9 @@ const compileFunction = (opts: CompileBlockOpts) => {
     },
     parameters,
   });
-  module.addFunction(identifier, parameterTypes, returnType, [], body);
-  module.addFunctionExport(identifier, identifier);
-  return module.nop();
+  mod.addFunction(identifier, parameterTypes, returnType, [], body);
+  mod.addFunctionExport(identifier, identifier);
+  return mod.nop();
 };
 
 const getFunctionParameters = (block: BlockNode) => {
@@ -135,20 +135,20 @@ const getFunctionIdentifier = (block: BlockNode) => {
 };
 
 const compileIf = (opts: CompileBlockOpts) => {
-  const { expression, module } = opts;
+  const { expression, mod } = opts;
   const conditionNode = expression.expressions[1];
   const ifTrueNode = expression.expressions[2];
   const ifFalseNode = expression.expressions[3];
   const condition = compileExpression({ ...opts, expression: conditionNode });
   const ifTrue = compileExpression({ ...opts, expression: ifTrueNode });
   const ifFalse = ifFalseNode ? compileExpression({ ...opts, expression: ifTrueNode }) : undefined;
-  return module.if(condition, ifTrue, ifFalse);
+  return mod.if(condition, ifTrue, ifFalse);
 };
 
-const registerStandardFunctions = (module: binaryen.Module, map: FunctionMap) => {
+const registerStandardFunctions = (mod: binaryen.Module, map: FunctionMap) => {
   const { i32, f32 } = binaryen;
-  const { i32: i32m, f32: f32m } = module;
-  const common = { module, map };
+  const { i32: i32m, f32: f32m } = mod;
+  const common = { mod, map };
   registerLogicFunction({ name: "lt_i32", type: i32, operator: i32m.lt_s, ...common });
   registerLogicFunction({ name: "gt_i32", type: i32, operator: i32m.gt_s, ...common });
   registerLogicFunction({ name: "eq_i32", type: i32, operator: i32m.eq, ...common });
@@ -165,15 +165,15 @@ const registerStandardFunctions = (module: binaryen.Module, map: FunctionMap) =>
 };
 
 const registerMathFunction = (opts: {
-  module: binaryen.Module;
+  mod: binaryen.Module;
   name: string;
   type: number;
   operator: (left: number, right: number) => number;
   map: FunctionMap;
 }) => {
-  const { module, name, type, operator, map } = opts;
+  const { mod, name, type, operator, map } = opts;
   return registerBinaryFunction({
-    module,
+    mod,
     name,
     paramType: type,
     returnType: type,
@@ -183,15 +183,15 @@ const registerMathFunction = (opts: {
 };
 
 const registerLogicFunction = (opts: {
-  module: binaryen.Module;
+  mod: binaryen.Module;
   name: string;
   type: number;
   operator: (left: number, right: number) => number;
   map: FunctionMap;
 }) => {
-  const { module, name, type, operator, map } = opts;
+  const { mod, name, type, operator, map } = opts;
   return registerBinaryFunction({
-    module,
+    mod,
     name,
     paramType: type,
     returnType: binaryen.i32,
@@ -201,22 +201,22 @@ const registerLogicFunction = (opts: {
 };
 
 const registerBinaryFunction = (opts: {
-  module: binaryen.Module;
+  mod: binaryen.Module;
   name: string;
   paramType: number;
   returnType: number;
   operator: (left: number, right: number) => number;
   map: FunctionMap;
 }) => {
-  const { module, name, paramType, returnType, operator, map } = opts;
-  module.addFunction(
+  const { mod, name, paramType, returnType, operator, map } = opts;
+  mod.addFunction(
     name,
     binaryen.createType([paramType, paramType]),
     returnType,
     [],
-    module.block(
+    mod.block(
       null,
-      [operator(module.local.get(0, paramType), module.local.get(0, paramType))],
+      [operator(mod.local.get(0, paramType), mod.local.get(0, paramType))],
       binaryen.auto
     )
   );
