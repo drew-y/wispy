@@ -13,10 +13,11 @@ import {
   IntNode,
   AstNode,
   BlockNode,
+  Ast,
 } from "./types";
 
-export const parse = (tokens: Token[]): BlockNode[] => {
-  const blocks: BlockNode[] = [];
+export const parse = (tokens: Token[]): Ast => {
+  const blocks: Ast = [];
 
   while (tokens.length) {
     const tree = consumeTokenTree(tokens);

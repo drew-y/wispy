@@ -1,5 +1,7 @@
 import { Token } from "./token";
 
+export type Ast = BlockNode[];
+
 export type AstNode = IntNode | FloatNode | IdentifierNode | TypedIdentifierNode | BlockNode;
 
 export type BlockNode = {
