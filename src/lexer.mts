@@ -5,16 +5,16 @@ export const lex = (input: string): Token[] => {
   const tokens: Token[] = [];
 
   while (chars.length) {
-    const tokenString = extractTokenString(chars);
-    if (tokenString === undefined) break;
-    const token = identifyToken(tokenString);
+    const word = consumeNextWord(chars);
+    if (word === undefined) break;
+    const token = identifyToken(word);
     tokens.push(token);
   }
 
   return tokens;
 };
 
-const extractTokenString = (chars: string[]): string | undefined => {
+const consumeNextWord = (chars: string[]): string | undefined => {
   const token: string[] = [];
 
   while (chars.length) {
@@ -49,28 +49,28 @@ const extractTokenString = (chars: string[]): string | undefined => {
   return token.length ? token.join("") : undefined;
 };
 
-const identifyToken = (token: string): Token => {
-  if (isInt(token)) return { type: "int", value: parseInt(token) };
-  if (isFloat(token)) return { type: "float", value: parseFloat(token) };
-  if (isIdentifier(token)) return { type: "identifier", value: token };
-  if (isBracket(token)) return { type: "bracket", value: token };
-  if (isTypedIdentifier(token)) return { type: "typed-identifier", value: token };
+const identifyToken = (word: string): Token => {
+  if (isInt(word)) return { type: "int", value: parseInt(word) };
+  if (isFloat(word)) return { type: "float", value: parseFloat(word) };
+  if (isIdentifier(word)) return { type: "identifier", value: word };
+  if (isBracket(word)) return { type: "bracket", value: word };
+  if (isTypedIdentifier(word)) return { type: "typed-identifier", value: word };
 
-  throw new Error(`Unknown token: ${token}`);
+  throw new Error(`Unknown token: ${word}`);
 };
 
-const isInt = (token: string) => /^[0-9]+$/.test(token);
+const isInt = (word: string) => /^[0-9]+$/.test(word);
 
-const isFloat = (token: string) => /^[0-9]+\.[0-9]+$/.test(token);
+const isFloat = (word: string) => /^[0-9]+\.[0-9]+$/.test(word);
 
-const isIdentifier = (token: string) => /^[a-zA-Z_][a-zA-Z0-9_\-]*$/.test(token);
+const isIdentifier = (word: string) => /^[a-zA-Z_][a-zA-Z0-9_\-]*$/.test(word);
 
-const isTypedIdentifier = (token: string) =>
-  /^[a-zA-Z_][a-zA-Z0-9_\-]*:[a-zA-Z_][a-zA-Z0-9_\-]*$/.test(token);
+const isTypedIdentifier = (word: string) =>
+  /^[a-zA-Z_][a-zA-Z0-9_\-]*:[a-zA-Z_][a-zA-Z0-9_\-]*$/.test(word);
 
-const isBracket = (token: string): token is Bracket => /[\(\)\[\]]/.test(token);
+const isBracket = (word: string): word is Bracket => /[\(\)\[\]]/.test(word);
 
 /** Brackets are the only terminator tokens for now */
-const isTerminatorToken = (token: string): token is Bracket => isBracket(token);
+const isTerminatorToken = (word: string): word is Bracket => isBracket(word);
 
 const isWhitespace = (char: string) => char === " " || char === "\n" || char === "\t";

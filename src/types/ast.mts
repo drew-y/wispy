@@ -28,6 +28,5 @@ export type TypedIdentifierNode = {
   typeIdentifier: string;
 };
 
-export type NonArrayToken = Exclude<Token, "parenthesis" | "square-bracket">;
-export type TokenTreeItem = NonArrayToken | TokenTree;
-export type TokenTree = TokenTreeItem[];
+export type NonBracketToken = Exclude<Token, "bracket">;
+export type TokenTree = (NonBracketToken | TokenTree)[];

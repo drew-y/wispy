@@ -1,8 +1,7 @@
 import {
   Token,
   TokenTree,
-  NonArrayToken,
-  TokenTreeItem,
+  NonBracketToken,
   IdentifierNode,
   TypedIdentifierNode,
   IdentifierToken,
@@ -29,18 +28,14 @@ export const parse = (tokens: Token[]): BlockNode => {
   };
 };
 
-const parseBlock = (block?: TokenTreeItem): BlockNode => {
-  if (!(block instanceof Array)) {
-    throw new Error("Expected block");
-  }
-
+const parseBlock = (block: TokenTree): BlockNode => {
   return {
     type: "block",
     expressions: block.map(parseExpression),
   };
 };
 
-const parseExpression = (expression?: TokenTreeItem): AstNode => {
+const parseExpression = (expression?: TokenTree | NonBracketToken): AstNode => {
   if (expression instanceof Array) {
     return parseBlock(expression);
   }
@@ -75,14 +70,14 @@ const parseTypedIdentifier = (identifier: TypedIdentifierToken): TypedIdentifier
 };
 
 const consumeTokenTree = (tokens: Token[]): TokenTree => {
-  const array: TokenTree = [];
+  const tree: TokenTree = [];
 
   consumeLeftBracket(tokens);
   while (tokens.length) {
     const token = tokens[0];
 
     if (token.type === "bracket" && getBracketDirection(token) === "left") {
-      array.push(consumeTokenTree(tokens));
+      tree.push(consumeTokenTree(tokens));
       continue;
     }
 
@@ -91,11 +86,11 @@ const consumeTokenTree = (tokens: Token[]): TokenTree => {
       break;
     }
 
-    array.push(token);
+    tree.push(token);
     tokens.shift();
   }
 
-  return array;
+  return tree;
 };
 
 const consumeLeftBracket = (tokens: Token[]) => {
@@ -118,12 +113,12 @@ const getBracketDirection = (token: Token): "left" | "right" => {
 };
 
 export const isTokenType = <T extends Token["type"]>(
-  item: TokenTreeItem | undefined,
+  item: TokenTree | NonBracketToken | undefined,
   type: T
 ): item is Extract<Token, { type: T }> => {
   return isToken(item) && item.type === type;
 };
 
-const isToken = (item?: TokenTreeItem): item is NonArrayToken => {
+const isToken = (item?: TokenTree | NonBracketToken): item is NonBracketToken => {
   return !(item instanceof Array);
 };
