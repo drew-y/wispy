@@ -1,4 +1,4 @@
-# Building a WebAssembly Language for Fun and Profit
+# Build a WebAssembly Language for Fun and Profit
 
 ```
 (fn fib:i32 [val:i32]
@@ -723,5 +723,6 @@ generating and running machine readable code.
 
 The final phase of our compiler is code generation. This phase takes our AST and converts it
 to a set of executable instructions. In our case WebAssembly. To accomplish this we are going
-to use a popular WebAssembly compiler toolchain called [binaryen](). Binaryen does much of the
-heavy lifting for us. This includes code size reduction and various performance optimization.
+to use a popular WebAssembly compiler toolchain called [binaryen](https://github.com/WebAssembly/binaryen).
+Binaryen does much of the heavy lifting for us. This includes code size reduction
+and various performance optimization.
