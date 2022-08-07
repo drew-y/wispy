@@ -75,7 +75,7 @@ const compileFunctionCall = (opts: CompileBlockOpts) => {
   return mod.call(identifier, args, functionInfo.returnType);
 };
 
-const compileFunction = (opts: CompileBlockOpts) => {
+const compileFunction = (opts: CompileBlockOpts): number => {
   const { expression: block, mod } = opts;
   assertFn(block);
   const { identifier, returnType } = getFunctionIdentifier(block);

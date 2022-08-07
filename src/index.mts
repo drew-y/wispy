@@ -8,8 +8,8 @@ const file = process.argv[2];
 const input = readFileSync(file, "utf8");
 
 const tokens = lex(input);
-console.log(JSON.stringify(tokens, undefined, 2));
 const ast = parse(tokens);
+console.log(JSON.stringify(tokens, undefined, 2));
 const mod = compile(ast);
 
 const binary = mod.emitBinary();
