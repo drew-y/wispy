@@ -31,6 +31,7 @@ Requirements:
 ```bash
 git clone git@github.com:drew-y/wispy.git
 cd wispy
+git checkout quickstart
 npm i
 ```
 
@@ -734,6 +735,13 @@ const ast = parse(tokens);
 console.log(JSON.stringify(tokens, undefined, 2));
 ```
 
+Build and run project:
+
+```bash
+npx tsc
+wispy example.wispy
+```
+
 If all goes well, the output should look like [this]() (TODO: Link to AST output).
 
 With that the parser is finished. In the next chapter we can get into the Juicy bits, actually
@@ -1358,3 +1366,49 @@ With that, our compiler is finished. It's time to execute some wispy!
 ### Putting It All Together
 
 Now that we have finished our compiler, we can finally run our code.
+
+First, replace the contents of `src/index.mts` with this:
+
+```ts
+// src/index.mts
+
+#!/usr/bin/env node
+import { readFileSync } from "fs";
+import { compile } from "./compiler.mjs";
+import { lex } from "./lexer.mjs";
+import { parse } from "./parser.mjs";
+
+const file = process.argv[2];
+const input = readFileSync(file, "utf8");
+
+const tokens = lex(input);
+const ast = parse(tokens);
+
+// !! New !!
+const mod = compile(ast);
+
+// This is sneakily where the code gen is *actually* happening
+const binary = mod.emitBinary();
+
+// Use the standard WebAssembly API to convert the wasm binary to a compiled module
+// our host NodeJS/v8 can use
+const compiled = new WebAssembly.Module(binary);
+
+// Build the instance, here you would add any external functions you might want to import into
+// the WebAssembly module
+const instance = new WebAssembly.Instance(compiled, {});
+
+// Finally, run the main function and log the result. We have to cast instance.exports to any
+// The standard TypeScript types appear to be wrong.
+console.log((instance.exports as any).main());
+```
+
+Now build and run project:
+
+```bash
+npx tsc
+wispy example.wispy
+```
+
+If all goes well (and you passed the number 15 to fib), you should see the number `610` in the
+output of your console. If so you've done it, you've made a working WebAssembly language. Congrats!
