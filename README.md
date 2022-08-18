@@ -5,10 +5,10 @@ is to be a short and simple language that can be easily implemented by people in
 in programming languages.
 
 ```
-(fn fib:int [val:int]
-  (if (lt val 2)
+(fn fib:i32 [val:i32]
+  (if (lt_i32 val 2)
     val
-    (add (fib (sub n 1)) (fib (sub n 2)))
-  )
-)
+    (add_i32 (fib (sub_i32 val 1)) (fib (sub_i32 val 2)))))
+
+(fn main:i32 [] (fib 15))
 ```
