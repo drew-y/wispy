@@ -1,10 +1,15 @@
 # Build a WebAssembly Language for Fun and Profit
 
-- WebAssembly (Wasm) is a new high performance assembly-like format optimized for the web.
-- Code targeting WebAssembly can often run at near-native speeds, all while still benefiting from the safer environment of a sandboxed browser VM.
-- The WebAssembly team has gone out of their way to make it easy existing programming languages to target WASM as a compilation format, offering a powerful compiler toolchain known as binaryen.
-- A side affect of this is that it also made it incredibly fun and easy to build _new_ languages for the web.
-- Thats where this guide comes in. A simple overview designed to help get your feet wet in building languages and exploring the inner workings of wasm
+- [WebAssembly](https://webassembly.org/) (wasm) is a high performance assembly-like format optimized for the web.
+- Code targeting WebAssembly can run at near-native speeds while still benefiting from the relatively safe environment of a sandboxed browser VM.
+- Wasm has opened up a whole new world for demanding desktop-class that comfortably run in the browser. For example, AutoCAD, was able to [port decades of code](https://www.youtube.com/watch?v=BfkL3WgOPdI) to the web using wasm.
+- Cases like AutoCAD’s have made it clear that wasm will be a major disruptive force in how web apps are developed.
+
+- To aid in the adoption of wasm, the WebAssembly team went out of their way to make it easy for existing programming languages to target wasm as a compilation target, offering a powerful compiler toolchain library known as binaryen.
+- Binaryen does a huge amount of heavy lifting for a compiler author. Offering tree shaking, code size reduction and various performance optimizations out of the box.
+- As someone who has long been interested in programming languages, this piqued my interest. Writing compiled languages has always been a daunting task.
+- What I found is binaryen made it incredibly fun and easy to build _new_ languages that are shockingly speedy.
+- That's where this guide comes in. A simple overview designed to help get your feet wet in building languages and exploring the inner workings of wasm.
 
 Here's a quick taste of the lisp inspired language we'll build, wispy:
 
@@ -17,16 +22,22 @@ Here's a quick taste of the lisp inspired language we'll build, wispy:
 (fn main:i32 [] (fib 15))
 ```
 
-By the end of this guide you'll have a working compiler and runtime fully capable of making high performance functions that can be run on the web.
+> This simple function calculates values of the [fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_number), a sequence of numbers that appears in surprising places throught mathematics and nature. Its one of my favorite illustrations of how elegantly patterns of the universe can be described in code.
 
-This article is designed for intermediate to advanced software developers looking for a fun side
-project to challenge themselves with.
+This guide is designed for intermediate to advanced software developers looking for a fun side
+project to challenge themselves with. By the end, we’ll have built a working compiler and runtime for wispy.
+
+The guide will be broken down into three articles:
+
+- Lexing (this article) - The process of converting the characters of code into meaningful units called tokens
+- Parsing - The process of converting the tokens into a logical tree known as an AST.
+- Compiling (Or code generation) - The process of converting the AST into the binary instructions run by our computer
 
 ## Setup
 
-In this guide we will be using TypeScript and NodeJS. The concepts are highly portable, so
-feel free to use the environment your most comfortable with. Our only major dependency, [binaryen](https://github.com/WebAssembly/binaryen),
-has a simple C API. Feel free to skip ahead to the next section if you're using a different
+In this guide, we will be using TypeScript and NodeJS. The concepts are highly portable, so
+feel free to use the environment you're most comfortable with. Our only major dependency, [binaryen](https://github.com/WebAssembly/binaryen),
+has a simple C API. You are welcome to skip ahead to the next section if you're using a different
 language.
 
 Requirements:
@@ -109,7 +120,7 @@ readable code into something closer to what a computer can understand.
 We'll start by defining our tokens in a new file:
 
 ```bash
-# mts extension is important, it tells typescript to create a corresponding mjs file so Node knows to use modules
+# mts extension is important, it tells typescript to create a corresponding mjs file, so Node knows to use modules
 mkdirp -p src/types/token.mts
 ```
 
@@ -129,19 +140,19 @@ export type FloatToken = { type: "float"; value: number };
 /** Previously defined tokens omitted for brevity */
 ```
 
-Now lets define some identifier tokens. In wispy an identifier can represent either the name
+Now, let's define some identifier tokens. In wispy, an identifier can represent either the name
 of a function, or the name of a function parameter. We have two types of identifier tokens,
 a standard `IdentifierToken` and a `TypedIdentifierToken`.
 
-An `IdentifierToken` is used in the body of a function to refer to the functions parameters or
+An `IdentifierToken` is used in the body of a function to refer to the function's parameters or
 to call another function.
 
 A `TypedIdentifierToken` is used when defining a function or a parameter. Typed identifiers
-take the form `identifier:type`. For example `val:i32` defines a parameter that is a 32 bit integer.
-When defining a function, the type represents the functions return type. For example, `fib:i32` is
-a function that that returns a 32 bit integer.
+take the form `identifier:type`. For example, `val:i32` defines a parameter that is a 32-bit integer.
+When defining a function, the type represents the function's return type. For example, `fib:i32` is
+a function that that returns a 32-bit integer.
 
-Here's the definitions:
+Here are the definitions:
 
 ```ts
 // src/types/token.mts
@@ -274,7 +285,7 @@ const consumeNextWord = (chars: string[]): string | undefined => {
     if (isTerminatorToken(char)) break;
   }
 
-  // If we characters for our token, join them into a single word. Otherwise, return undefined to signal to the lexer
+  // If we have characters for our token, join them into a single word. Otherwise, return undefined to signal to the lexer
   // that we are finished processing tokens.
   return token.length ? token.join("") : undefined;
 };
@@ -300,11 +311,11 @@ const identifyToken = (word: string): Token => {
 };
 ```
 
-Finally we define our helper functions. These functions all take a string and return
+Finally, we define our helper functions. These functions all take a string and return
 `true` if the string passes their test, `false` otherwise. Most are written using regex. If
 you're unfamiliar with regex, I highly recommend [regexone](https://regexone.com/) as a resource
 to learn more. In a nutshell, regex is an expression syntax that's used to extract meaningful
-information from text. In our case we'll use it to match words against tokens.
+information from text. In our case, we'll use it to match words against tokens.
 
 ```ts
 const isInt = (word: string) => /^[0-9]+$/.test(word);
@@ -325,11 +336,11 @@ const isTerminatorToken = (word: string): word is Bracket => isBracket(word);
 const isWhitespace = (char: string) => char === " " || char === "\n" || char === "\t";
 ```
 
-At this point `src/lexer.mts` is finished and should look like [this file](https://github.com/drew-y/wispy/blob/f3a1e8106868f63dececedc077530628b3c26d54/src/lexer.mts).
+At this point, `src/lexer.mts` is finished and should look something like [this file](https://github.com/drew-y/wispy/blob/f3a1e8106868f63dececedc077530628b3c26d54/src/lexer.mts).
 
 ### Running the Lexer
 
-Its time to actually run the lexer. Start by making a new file `src/index.mts`:
+It's time to actually run the lexer. Start by making a new file `src/index.mts`:
 
 ```ts
 #!/usr/bin/env node
@@ -370,7 +381,7 @@ wispy example.wispy
 node dist/index.mjs example.wispy
 ```
 
-If everything goes well `wispy` should output something like this:
+If everything goes well, `wispy` should output something like this:
 
 ```
 [
@@ -398,7 +409,7 @@ If everything goes well `wispy` should output something like this:
 ]
 ```
 
-We are ready to move onto parsing.
+With that we have a working lexer. We can break our code down into tokens. This is a good place to break for now. In the next article we’ll move onto parsing these tokens into a logical tree that will ultimately be converted to wasm.
 
 ## Parsing
 
