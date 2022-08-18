@@ -1,5 +1,13 @@
 # Build a WebAssembly Language for Fun and Profit
 
+- WebAssembly (Wasm) is a new high performance assembly-like format optimized for the web.
+- Code targeting WebAssembly can often run at near-native speeds, all while still benefiting from the safer environment of a sandboxed browser VM.
+- The WebAssembly team has gone out of their way to make it easy existing programming languages to target WASM as a compilation format, offering a powerful compiler toolchain known as binaryen.
+- A side affect of this is that it also made it incredibly fun and easy to build _new_ languages for the web.
+- Thats where this guide comes in. A simple overview designed to help get your feet wet in building languages and exploring the inner workings of wasm
+
+Here's a quick taste of the lisp inspired language we'll build, wispy:
+
 ```
 (fn fib:i32 [val:i32]
   (if (lt_i32 val 2)
@@ -9,7 +17,7 @@
 (fn main:i32 [] (fib 15))
 ```
 
-Intro here
+By the end of this guide you'll have a working compiler and runtime fully capable of making high performance functions that can be run on the web.
 
 This article is designed for intermediate to advanced software developers looking for a fun side
 project to challenge themselves with.
@@ -36,6 +44,8 @@ npm i
 ```
 
 **Manual Setup**
+
+I've included manual setup instructions as an alternative to the quick start, in case you want to know exactly how the project was set up or just like doing things from scratch. If you've already done the quick start, skip to the next section.
 
 1. Open a terminal window and make a new directory:
 
@@ -82,9 +92,17 @@ npx tsc init .
 
 ## Lexing
 
-Lexing is the process of digesting all the text characters of our program into small chunks called
-tokens. Lexing is typically the first step in turning human readable code into something closer
-to what a computer can understand.
+Lexing is the process of digesting each individual character of our program into a set of tokens. A
+token is a group of characters that take on a special meaning when put together. Take the following
+snippet of wispy:
+
+```
+(add 1 2)
+```
+
+There are five unique tokens in that snippet `(`, `add`, `1`, `2` and `)`. The lexer's job is simply
+to identify and list those tokens in order.Lexing is typically the first step in turning human
+readable code into something closer to what a computer can understand.
 
 ### Defining Our Tokens
 
@@ -146,14 +164,18 @@ export type Bracket = "(" | ")" | "[" | "]";
 /** Previously defined tokens omitted for brevity */
 ```
 
-Finally we define the top level `Token` type. `Token` is a [discriminated union](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions).
-If a variable is type `Token` that means it could be any one of the tokens we defined previously.
+Finally we define the top level `Token` type:
 
 ```ts
 // src/types/token.mts
 export type Token = BracketToken | IntToken | FloatToken | IdentifierToken | TypedIdentifierToken;
 /** Previously defined tokens omitted for brevity */
 ```
+
+`Token` is a [discriminated union](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions). Discriminated Unions are an incredibly powerful programming language construct. They represent a value that can be one of many types. In our case, a `Token` can any one of the more specific token types we defined earlier, such as `IntToken` or `FloatToken`. You'll notice that each
+of these tokens have a unique `type` field, such as `type: "int"` in the case of `IntToken`. This is the discriminator. Down the
+line you can pass a `Token` to a function and that function can use the `type` field to figure out which specific token it's working
+with.
 
 At this point `src/types/token.mts` is finished and should look like file. TODO link to finished
 file in github.
@@ -303,8 +325,7 @@ const isTerminatorToken = (word: string): word is Bracket => isBracket(word);
 const isWhitespace = (char: string) => char === " " || char === "\n" || char === "\t";
 ```
 
-At this point `src/lexer.mts` is finished and should look like this file. TODO link to finished
-file in github.
+At this point `src/lexer.mts` is finished and should look like [this file](https://github.com/drew-y/wispy/blob/f3a1e8106868f63dececedc077530628b3c26d54/src/lexer.mts).
 
 ### Running the Lexer
 
@@ -384,6 +405,8 @@ We are ready to move onto parsing.
 Parsing is the portion of our compiler that takes the tokens returned by the lexer and converting
 them to an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) (ast). The
 ast brings our code one step closer to being something a computer can understand.
+
+TODO: Spend more time explaining what an AST is
 
 Thankfully, because wispy is an S-expression language our code is essentially _already_ an
 ast. All we have to do is convert the format from a list of tokens to a tree-like data structure
