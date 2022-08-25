@@ -1,0 +1,151 @@
+{
+  "type": "block",
+  "expressions": [
+    {
+      "type": "block",
+      "expressions": [
+        {
+          "type": "identifier",
+          "identifier": "fn"
+        },
+        {
+          "type": "typed-identifier",
+          "identifier": "fib",
+          "typeIdentifier": "i32"
+        },
+        {
+          "type": "block",
+          "expressions": [
+            {
+              "type": "typed-identifier",
+              "identifier": "val",
+              "typeIdentifier": "i32"
+            }
+          ]
+        },
+        {
+          "type": "block",
+          "expressions": [
+            {
+              "type": "identifier",
+              "identifier": "if"
+            },
+            {
+              "type": "block",
+              "expressions": [
+                {
+                  "type": "identifier",
+                  "identifier": "lt_i32"
+                },
+                {
+                  "type": "identifier",
+                  "identifier": "val"
+                },
+                {
+                  "type": "int",
+                  "value": 2
+                }
+              ]
+            },
+            {
+              "type": "identifier",
+              "identifier": "val"
+            },
+            {
+              "type": "block",
+              "expressions": [
+                {
+                  "type": "identifier",
+                  "identifier": "add_i32"
+                },
+                {
+                  "type": "block",
+                  "expressions": [
+                    {
+                      "type": "identifier",
+                      "identifier": "fib"
+                    },
+                    {
+                      "type": "block",
+                      "expressions": [
+                        {
+                          "type": "identifier",
+                          "identifier": "sub_i32"
+                        },
+                        {
+                          "type": "identifier",
+                          "identifier": "val"
+                        },
+                        {
+                          "type": "int",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "block",
+                  "expressions": [
+                    {
+                      "type": "identifier",
+                      "identifier": "fib"
+                    },
+                    {
+                      "type": "block",
+                      "expressions": [
+                        {
+                          "type": "identifier",
+                          "identifier": "sub_i32"
+                        },
+                        {
+                          "type": "identifier",
+                          "identifier": "val"
+                        },
+                        {
+                          "type": "int",
+                          "value": 2
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "block",
+      "expressions": [
+        {
+          "type": "identifier",
+          "identifier": "fn"
+        },
+        {
+          "type": "typed-identifier",
+          "identifier": "main",
+          "typeIdentifier": "i32"
+        },
+        {
+          "type": "block",
+          "expressions": []
+        },
+        {
+          "type": "block",
+          "expressions": [
+            {
+              "type": "identifier",
+              "identifier": "fib"
+            },
+            {
+              "type": "int",
+              "value": 15
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
